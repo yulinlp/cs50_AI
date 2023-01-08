@@ -5,6 +5,7 @@ class Node():
         self.state = state
         self.parent = parent
         self.action = action
+        
 
 
 class StackFrontier():
