@@ -160,7 +160,9 @@ class Maze():
 
             # Add neighbors to frontier
             for action, state in self.neighbors(node.state):
-                if not frontier.contains_state(state) and state not in self.explored:
+                # Why to check frontier.contains_state(state)?
+                # After testing, "frontier.contains_state(state)" has been deleted
+                if state not in self.explored:
                     child = Node(state=state, parent=node, action=action)
                     frontier.add(child)
 
@@ -227,4 +229,5 @@ m.solve()
 print("States Explored:", m.num_explored)
 print("Solution:")
 m.print()
+print(m.solution)
 m.output_image("maze.png", show_explored=True)
