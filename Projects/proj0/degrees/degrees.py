@@ -65,11 +65,11 @@ def main():
     print("Data loaded.")
 
     # source = person_id_for_name(input("Name: "))
-    source = person_id_for_name('valeria golino')
+    source = person_id_for_name('Emma Watson')
     if source is None:
         sys.exit("Person not found.")
     # target = person_id_for_name(input("Name: "))
-    target = person_id_for_name('cary elwes')
+    target = person_id_for_name('Jennifer Lawrence')
     if target is None:
         sys.exit("Person not found.")
 
@@ -98,8 +98,6 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # test_name_pair = cary elwes and valeria golino
-    # return None
     # TODO
     Q = QueueFrontier()
     explored = set()
