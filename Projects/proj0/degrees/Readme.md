@@ -1,4 +1,4 @@
-Degree实验重要的几个点：  
+#Degree实验重要的几个点：  
 1.把实际问题抽象为搜索问题：  
 Node.state <=> person_id  
 Node.action <=> which movie the person from <=> movie_id  
