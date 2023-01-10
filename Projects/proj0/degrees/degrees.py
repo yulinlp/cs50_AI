@@ -3,12 +3,15 @@ import sys
 from util import Node, StackFrontier, QueueFrontier
 
 # Maps names to a set of corresponding person_ids
+# e.g. names = {"yulin" : (1,33,644,683),"tongTong": (2,4),...,}
 names = {}
 
 # Maps person_ids to a dictionary of: name, birth, movies (a set of movie_ids)
+# e.g. people = { 1 : {yulin,2003,(242,467575,3414)},...,}
 people = {}
 
 # Maps movie_ids to a dictionary of: title, year, stars (a set of person_ids)
+# e.g. similar to people,but now id = movie_id instead of person_id
 movies = {}
 
 
@@ -61,10 +64,12 @@ def main():
     load_data(directory)
     print("Data loaded.")
 
-    source = person_id_for_name(input("Name: "))
+    # source = person_id_for_name(input("Name: "))
+    source = person_id_for_name('valeria golino')
     if source is None:
         sys.exit("Person not found.")
-    target = person_id_for_name(input("Name: "))
+    # target = person_id_for_name(input("Name: "))
+    target = person_id_for_name('cary elwes')
     if target is None:
         sys.exit("Person not found.")
 
@@ -84,6 +89,8 @@ def main():
 
 
 def shortest_path(source, target):
+    # source --a set of person_id
+    # target --a set of person_id
     """
     Returns the shortest list of (movie_id, person_id) pairs
     that connect the source to the target.
@@ -91,7 +98,32 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
+    # test_name_pair = cary elwes and valeria golino
+    # return None
     # TODO
+    Q = QueueFrontier()
+    explored = set()
+    Q.add(Node(state=source,parent=None,action=None))
+    while True:
+        if Q.empty():
+            raise Exception("No solution")
+        lastNode = Q.remove()
+        explored.add((lastNode.action,lastNode.state))
+        neighbors = neighbors_for_person(lastNode.state) # -- set
+        for neighbor in neighbors:
+            NeighbourNode = Node(state=neighbor[1],parent=lastNode,action=neighbor[0])
+            if NeighbourNode.state == target:
+                path = []
+                while NeighbourNode.state != source:
+                    path.append((NeighbourNode.action,NeighbourNode.state))
+                    NeighbourNode = NeighbourNode.parent
+                path.reverse()
+                return path
+            else:
+                if (NeighbourNode.action,NeighbourNode.state) not in explored:
+                    explored.add((NeighbourNode.action, NeighbourNode.state))
+                    Q.add(NeighbourNode)
+
     raise NotImplementedError
 
 
