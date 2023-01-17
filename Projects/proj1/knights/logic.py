@@ -60,7 +60,7 @@ class Symbol(Sentence):
         try:
             return bool(model[self.name])
         except KeyError:
-            raise EvaluationException(f"variable {self.name} not in model")
+            raise Exception(f"variable {self.name} not in model")
 
     def formula(self):
         return self.name
@@ -227,24 +227,27 @@ class Biconditional(Sentence):
 
 def model_check(knowledge, query):
     """Checks if knowledge base entails query."""
-
+    # Define an auxiliary function
     def check_all(knowledge, query, symbols, model):
         """Checks if knowledge base entails query, given a particular model."""
+        # Check_all function's idea is to list all 'True or False' possibilities ,and evaluate them one by one.
 
-        # If model has an assignment for each symbol
+        # If symbols is Null ,i.e. there is no symbol to be checked.
         if not symbols:
-
-            # If knowledge base is true in model, then query must also be true
+            # Check whether implication is true or not
+            # T=>T or F=>T or F=>F are all True
             if knowledge.evaluate(model):
                 return query.evaluate(model)
-            return True # why True?
+            return True
         else:
 
             # Choose one of the remaining unused symbols
             remaining = symbols.copy()
             p = remaining.pop()
-
+            print(p)
+            print(model)
             # Create a model where the symbol is true
+            # One model means a unique possibility to check
             model_true = model.copy()
             model_true[p] = True
 
@@ -253,6 +256,7 @@ def model_check(knowledge, query):
             model_false[p] = False
 
             # Ensure entailment holds in both models
+            # The parameters 'symbols' now passed in are the remaining ones
             return (check_all(knowledge, query, remaining, model_true) and
                     check_all(knowledge, query, remaining, model_false))
 

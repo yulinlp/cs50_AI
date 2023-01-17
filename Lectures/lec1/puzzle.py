@@ -43,7 +43,7 @@ knowledge.add(
 )
 
 knowledge.add(
-    Not(Symbol("PomonaSlytherin"))
+    Not(Symbol("PomonaHufflepuff"))
 )
 
 knowledge.add(
