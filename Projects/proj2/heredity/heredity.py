@@ -33,6 +33,7 @@ PROBS = {
     },
 
     # Mutation probability
+    # 基因突变的概率
     "mutation": 0.01
 }
 
@@ -43,6 +44,11 @@ def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python heredity.py data.csv")
     people = load_data(sys.argv[1])
+
+    # >>> print(people)
+    # {'Harry': {'name': 'Harry', 'mother': 'Lily', 'father': 'James', 'trait': None},
+    # 'James': {'name': 'James', 'mother': None, 'father': None, 'trait': True}, 'Lily': {'name': 'Lily',
+    # 'mother': None, 'father': None, 'trait': False}}
 
     # Keep track of gene and trait probabilities for each person
     probabilities = {
@@ -131,7 +137,6 @@ def powerset(s):
 def joint_probability(people, one_gene, two_genes, have_trait):
     """
     Compute and return a joint probability.
-
     The probability returned should be the probability that
         * everyone in set `one_gene` has one copy of the gene, and
         * everyone in set `two_genes` has two copies of the gene, and
@@ -139,7 +144,183 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+    probability = 1
+    zero_gene = people.keys() - (one_gene | two_genes) # Set of people with no genes
+
+    for person in zero_gene:
+        # Getting no genes means that we need to find the probability that each parent will not contribute gene
+
+        if people[person]["mother"] is None:
+            probability *= PROBS["gene"][0]
+        elif people[person]["mother"] is not None:
+            mother = people[person]["mother"]
+            father = people[person]["father"]
+
+            if mother in zero_gene and father in zero_gene:
+                # p that person doesn't get gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.99 too
+                probability *= (1 - PROBS["mutation"]) ** 2
+            if mother in zero_gene and father in one_gene:
+                # p that person doesn't get gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.50
+                probability *= (1 - PROBS["mutation"]) * 0.5
+            if mother in zero_gene and father in two_genes:
+                # p that person doesn't get gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.01
+                probability *= (1 - PROBS["mutation"]) * PROBS["mutation"]
+
+            if mother in one_gene and father in zero_gene:
+                # p that person doesn't get gene from mother is 0.5
+                # p that person doesn't get gene from father is 0.99
+                probability *= 0.5 * (1 - PROBS["mutation"])
+            if mother in one_gene and father in one_gene:
+                # p that person doesn't get gene from mother is 0.5
+                # p that person doesn't get gene from father is 0.5 too
+                probability *= 0.5 ** 2
+            if mother in one_gene and father in two_genes:
+                # p that person doesn't get gene from mother is 0.5
+                # p that person doesn't get gene from father is 0.01
+                probability *= 0.5 * PROBS["mutation"]
+
+            if mother in two_genes and father in zero_gene:
+                # p that person doesn't get gene from mother is 0.01
+                # p that person doesn't get gene from father is 0.99
+                probability *= PROBS["mutation"] * (1 - PROBS["mutation"])
+            if mother in two_genes and father in one_gene:
+                # p that person doesn't get gene from mother is 0.01
+                # p that person doesn't get gene from father is 0.5
+                probability *= PROBS["mutation"] * 0.5
+            if mother in two_genes and father in two_genes:
+                # p that person doesn't get gene from mother is 0.01
+                # p that person doesn't get gene from father is 0.01
+                probability *= PROBS["mutation"] ** 2
+
+        # Multiply by the probability that the person has trait with zero genes
+        probability *= PROBS["trait"][0][person in have_trait]
+
+    for person in one_gene:
+        # Getting one gene means that person should inherit gene only from one of his parents
+        # which means that we need to multiply the probability that it is father who gives the gene or mother, while
+        # the second parent doesn't plus the opposite situation
+        # (mother gives gene * father doesn't give gene) + (mother doesn't give gene * father gives gene)
+
+        if people[person]["mother"] is None:
+            probability *= PROBS["gene"][1]
+        elif people[person]["mother"] is not None:
+            mother = people[person]["mother"]
+            father = people[person]["father"]
+
+            # One of parents has zero genes
+            if mother in zero_gene and father in zero_gene:
+                # p that person gets gene from mother or father is 0.01
+                # p that person doesn't get gene from mother or father is 0.99
+                probability *= PROBS["mutation"] * (1 - PROBS["mutation"]) + PROBS["mutation"] * (1 - PROBS["mutation"])
+            if mother in zero_gene and father in one_gene:
+                # p that person gets gene from mother is 0.01
+                # p that person doesn't get gene from father 0.5
+                # p that person gets gene from father 0.5
+                # p that person doesn't get gene from mother is 0.99
+                probability *= PROBS["mutation"] * 0.5 + (1 - PROBS["mutation"]) * 0.5
+            if mother in zero_gene and father in two_genes:
+                # p that person gets gene from mother is 0.01
+                # p that person doesn't get gene from father is 0.01
+                # p that person gets gene from father is 0.99
+                # p that person doesn't get gene from mother is 0.99
+                probability *= PROBS["mutation"] ** 2 + (1 - PROBS["mutation"]) ** 2
+
+            # One of parents has one gene
+            if mother in one_gene and father in zero_gene:
+                # p that person gets gene from mother is 0.5
+                # p that person doesn't get gene from father is 0.99
+                # p that person gets gene from father is 0.01
+                # p that person doesn't get gene from mother is 0.5
+                probability *= (1 - PROBS["mutation"]) * 0.5 + PROBS["mutation"] * 0.5
+            if mother in one_gene and father in one_gene:
+                # p that person gets gene from mother/father is 0.5
+                # p that person doesn't get gene from father/mother is 0.5
+                probability *= 0.5 ** 2 + 0.5 ** 2
+            if mother in one_gene and father in two_genes:
+                # p that person gets gene from mother is 0.5
+                # p that person doesn't get gene from father is 0.01
+                # p that person gets gene from father is 0.99
+                # p that person doesn't get gene from mother is 0.5
+                probability *= 0.5 * PROBS["mutation"] + (1 - PROBS["mutation"]) * 0.5
+
+            # One of parents has two genes
+            if mother in two_genes and father in zero_gene:
+                # p that person gets gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.99
+                # p that person gets gene from father is 0.01
+                # p that person doesn't get gene from mother is 0.01
+                probability *= (1 - PROBS["mutation"]) ** 2 + PROBS["mutation"] ** 2
+            if mother in two_genes and father in one_gene:
+                # p that person gets gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.5
+                # p that person gets gene from father is 0.5
+                # p that person doesn't get gene from mother is 0.01
+                probability *= (1 - PROBS["mutation"]) * 0.5 + PROBS["mutation"] * 0.5
+            if mother in two_genes and father in two_genes:
+                # p that person gets gene from mother is 0.99
+                # p that person doesn't get gene from father is 0.01
+                # p that person gets gene from father is 0.99
+                # p that person doesn't get gene from mother is 0.01
+                probability *= (1 - PROBS["mutation"]) * PROBS["mutation"] + (1 - PROBS["mutation"]) * PROBS["mutation"]
+
+        # Multiply by the probability that the person has trait with one gene
+        probability *= PROBS["trait"][1][person in have_trait]
+
+    for person in two_genes:
+        # Getting two genes means person should inherit genes from both of the parents
+        # which is why we need to find the probability each parent can contribute gene
+
+        if people[person]["mother"] is None:
+            probability *= PROBS["gene"][2]
+        elif people[person]["mother"] is not None:
+            mother = people[person]["mother"]
+            father = people[person]["father"]
+
+            if mother in zero_gene and father in zero_gene:
+                # p that person gets gene from mother is 0.01
+                # p that person gets gene from father is 0.01
+                probability *= PROBS["mutation"] * PROBS["mutation"]
+            if mother in zero_gene and father in one_gene:
+                # p that person gets gene from mother is 0.01
+                # p that person gets gene from father is 0.5
+                probability *= PROBS["mutation"] * 0.5
+            if mother in zero_gene and father in two_genes:
+                # p that person gets gene from mother is 0.01
+                # p that person gets gene from father is 0.99
+                probability *= PROBS["mutation"] * (1 - PROBS["mutation"])
+
+            if mother in one_gene and father in zero_gene:
+                # p that person gets gene from mother is 0.5
+                # p that person gets gene from father is 0.01
+                probability *= 0.5 * PROBS["mutation"]
+            if mother in one_gene and father in one_gene:
+                # p that person gets gene from mother is 0.5
+                # p that person gets gene from father is 0.5
+                probability *= 0.5 * 0.5
+            if mother in one_gene and father in two_genes:
+                # p that person gets gene from mother is 0.5
+                # p that person gets gene from father is 0.99
+                probability *= 0.5 * (1 - PROBS["mutation"])
+            if mother in two_genes and father in zero_gene:
+                # p that person gets gene from mother is 0.99
+                # p that person gets gene from father is 0.01
+                probability *= (1 - PROBS["mutation"]) * PROBS["mutation"]
+            if mother in two_genes and father in one_gene:
+                # p that person gets gene from mother is 0.99
+                # p that person gets gene from father is 0.5
+                probability *= (1 - PROBS["mutation"]) * 0.5
+            if mother in two_genes and father in two_genes:
+                # p that person gets gene from mother is 0.99
+                # p that person gets gene from father is 0.99
+                probability *= (1 - PROBS["mutation"]) ** 2
+
+        # Multiply by the probability that the person has trait with two genes
+        probability *= PROBS["trait"][2][person in have_trait]
+
+    return probability
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -149,7 +330,18 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    for person in probabilities:
+
+        # if person has one gene, add the joint probability p to them and so on
+        if person in one_gene:
+            probabilities[person]["gene"][1] += p
+        elif person in two_genes:
+            probabilities[person]["gene"][2] += p
+        else:
+            probabilities[person]["gene"][0] += p
+
+        # if person has or hasn't trait, add the joint probability
+        probabilities[person]["trait"][person in have_trait] += p
 
 
 def normalize(probabilities):
@@ -157,7 +349,21 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    for person in probabilities:
+
+        # sum all values from the gene set
+        genes = sum(probabilities[person]["gene"].values())
+
+        # there are only three options, 0, 1, or 2 genes
+        for i in range(2):
+            probabilities[person]["gene"][i] /= genes
+
+        traits = sum(probabilities[person]["trait"].values())
+
+        # there are only two options, 0 or 1 (False of True)
+        for i in range(0, 2):
+            probabilities[person]["trait"][i] /= traits
+
 
 
 if __name__ == "__main__":
